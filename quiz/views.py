@@ -40,19 +40,18 @@ def guess_movie(request):
 
     hints = current_movie.hints[:hints_used_for_current_movie] if hints_used_for_current_movie > 0 else []
 
-    # progress_percentage = (current_index / total_movies) * 100 if total_movies > 0 else 0
     remaining_questions = total_movies - current_index
+
+    current_movie_display = f"{current_index + 1}/{total_movies}"  # Format current movie display
 
     context = {
         'movie': current_movie,
         'overview': current_movie.overview,
         'hints': hints,
-        'current_index': current_index + 1,
-        'total_movies': total_movies,
-        #'progress_percentage': progress_percentage,
-        'score': score,
+        'current_movie_display': current_movie_display,  # New key for displaying the current movie
+        'score': score,  # Display score as a single number
+        # 'progress_percentage': progress_percentage,
         'remaining_questions': remaining_questions,
-        'error': None,
         'global_hints_remaining': max_global_hints - global_hints_used,
     }
 
@@ -82,12 +81,9 @@ def guess_movie(request):
                     hints_used_for_current_movie += 1
                     request.session['global_hints_used'] = global_hints_used
                     request.session['hints_used_for_current_movie'] = hints_used_for_current_movie
-                    # messages.info(request, 'Hint used successfully!')  # Informational message
                 else:
-                    # context['error'] = "No more global hints available."
                     messages.warning(request, "No more global hints available.")  # Warning message
             else:
-                # context['error'] = "No more global hints available."
                 messages.info(request, "You have already used the maximum number of hints for this movie.")  # Informational message
 
             return redirect('guess_movie')
