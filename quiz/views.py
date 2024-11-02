@@ -1,5 +1,6 @@
 # views.py
 from django.shortcuts import render, redirect
+from django.contrib import messages  # Import messages
 from .tmdb import TMDBDownloader
 from .models import Movie
 import time
@@ -38,9 +39,6 @@ def guess_movie(request):
     progress_percentage = (current_index / total_movies) * 100 if total_movies > 0 else 0
     remaining_questions = total_movies - current_index
 
-    # Add guess feedback to context if it exists in the session
-    guess_feedback = request.session.get('guess_feedback', None)
-
     context = {
         'movie': current_movie,
         'overview': current_movie.overview,
@@ -52,7 +50,6 @@ def guess_movie(request):
         'remaining_questions': remaining_questions,
         'error': None,
         'global_hints_remaining': max_global_hints - global_hints_used,
-        'guess_feedback': guess_feedback,  # Pass feedback to template
     }
 
     if request.method == 'POST':
@@ -64,11 +61,11 @@ def guess_movie(request):
                 current_index += 1
                 request.session['current_index'] = current_index
                 request.session['hints_used_for_current_movie'] = 0  # Reset for the next movie
-                request.session['guess_feedback'] = 'correct'  # Set feedback
+                messages.success(request, 'Correct! Great job!')  # Use messages framework
                 return redirect('guess_movie')
             else:
                 context['error'] = "Incorrect guess! Moving to the next movie."
-                request.session['guess_feedback'] = 'wrong'  # Set feedback
+                messages.error(request, 'Incorrect guess! Better luck next time.')  # Use messages framework
                 current_index += 1
                 request.session['current_index'] = current_index
                 request.session['hints_used_for_current_movie'] = 0  # Reset for the next movie

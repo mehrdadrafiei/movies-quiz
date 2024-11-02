@@ -20,6 +20,24 @@
 
 <div class="container mt-5">
     <div class="card shadow-sm p-4">
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} text-center" role="alert" style="display: none;">
+                {{ message }}
+            </div>
+        {% endfor %}
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const alerts = document.querySelectorAll('.alert');
+                alerts.forEach(function(alert) {
+                    alert.style.display = 'block'; // Show the alert
+                    setTimeout(function() {
+                        alert.style.display = 'none'; // Hide after 2 seconds
+                    }, 2000);
+                });
+            });
+        </script>
+
         <div class="info-container">
             <div class="timer" id="timer">06:00</div>
             <div class="score">Score: {{ score }} / {{ total_movies }}</div>
@@ -30,18 +48,6 @@
         </div>
 
         <h1 class="card-title text-center mb-4">Guess the Movie!</h1>
-
-        <!-- Display feedback for the user's guess -->
-        {% if guess_feedback == 'correct' %}
-            <div class="alert alert-success text-center" role="alert">
-                Correct! Great job!
-            </div>
-        {% elif guess_feedback == 'wrong' %}
-            <div class="alert alert-danger text-center" role="alert">
-                Incorrect guess! Better luck next time.
-            </div>
-        {% endif %}
-
         
         <div>
             <p><strong>Overview:</strong> {{ overview }}</p>
