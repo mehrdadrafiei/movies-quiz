@@ -33,11 +33,13 @@ def guess_movie(request):
     max_global_hints = 5  # Total hints allowed for all movies
     hints_used_for_current_movie = request.session.get('hints_used_for_current_movie', 0)
 
-    # Display hints only if used for the current movie
     hints = current_movie.hints[:hints_used_for_current_movie] if hints_used_for_current_movie > 0 else []
 
     progress_percentage = (current_index / total_movies) * 100 if total_movies > 0 else 0
     remaining_questions = total_movies - current_index
+
+    # Add guess feedback to context if it exists in the session
+    guess_feedback = request.session.get('guess_feedback', None)
 
     context = {
         'movie': current_movie,
@@ -50,6 +52,7 @@ def guess_movie(request):
         'remaining_questions': remaining_questions,
         'error': None,
         'global_hints_remaining': max_global_hints - global_hints_used,
+        'guess_feedback': guess_feedback,  # Pass feedback to template
     }
 
     if request.method == 'POST':
@@ -61,9 +64,11 @@ def guess_movie(request):
                 current_index += 1
                 request.session['current_index'] = current_index
                 request.session['hints_used_for_current_movie'] = 0  # Reset for the next movie
+                request.session['guess_feedback'] = 'correct'  # Set feedback
                 return redirect('guess_movie')
             else:
                 context['error'] = "Incorrect guess! Moving to the next movie."
+                request.session['guess_feedback'] = 'wrong'  # Set feedback
                 current_index += 1
                 request.session['current_index'] = current_index
                 request.session['hints_used_for_current_movie'] = 0  # Reset for the next movie
