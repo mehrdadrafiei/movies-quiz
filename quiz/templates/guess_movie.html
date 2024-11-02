@@ -18,96 +18,100 @@
 </head>
 <body>
 
-<div class="container mt-5">
-    <div class="card shadow-sm p-4">
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} text-center" role="alert" style="display: none;">
-                {{ message }}
-            </div>
-        {% endfor %}
-
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                const alerts = document.querySelectorAll('.alert');
-                alerts.forEach(function(alert) {
-                    alert.style.display = 'block'; // Show the alert
-                    setTimeout(function() {
-                        alert.style.display = 'none'; // Hide after 2 seconds
-                    }, 2000);
-                });
-            });
-        </script>
-
-        <div class="info-container">
-            <div class="timer" id="timer">06:00</div>
-            <div class="score">Score: {{ score }} / {{ total_movies }}</div>
-            <div class="remaining-questions">
-                Remaining: {{ remaining_questions }}<br>
-                <small>Hints Available: {{ global_hints_remaining }}</small>
-            </div>
-        </div>
-
-        <h1 class="card-title text-center mb-4">Guess the Movie!</h1>
+    <div class="container mt-5">
+        <div class="card shadow-sm p-4">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} text-center" role="alert" style="display: block;">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
         
-        <div>
-            <p><strong>Overview:</strong> {{ overview }}</p>
-        </div>
-
-        <!-- Guess Form -->
-        <form method="POST" class="d-flex justify-content-center">
-            {% csrf_token %}
-            <input type="text" name="guess" placeholder="Enter your guess" class="form-control me-2" style="max-width: 300px;" />
-            <button type="submit" name="submit_guess" class="btn btn-success me-2">Guess</button>
-            <button type="submit" name="hint" class="btn btn-info">Get Hint</button>
-        </form>
-
-        <!-- Progress Indicator -->
-        <div class="mt-4">
-            <div class="progress">
-                <div class="progress-bar" role="progressbar" style="width: {{ progress_percentage }}%;" 
-                     aria-valuenow="{{ current_index }}" aria-valuemin="0" aria-valuemax="{{ total_movies }}"></div>
+            <div class="info-container">
+                <div class="timer" id="timer">06:00</div>
+                <div class="score">Score: {{ score }} / {{ total_movies }}</div>
+                <div class="remaining-questions">
+                    Remaining: {{ remaining_questions }}<br>
+                    <small>Hints Available: {{ global_hints_remaining }}</small>
+                </div>
             </div>
-        </div>
-
-        <!-- Hints Section -->
-        {% if hints %}
+    
+            <h1 class="card-title text-center mb-4">Guess the Movie!</h1>
+    
+            <div>
+                <p><strong>Overview:</strong> {{ overview }}</p>
+            </div>
+    
+            <!-- Guess Form -->
+            <form method="POST" class="d-flex justify-content-center">
+                {% csrf_token %}
+                <input type="text" name="guess" placeholder="Enter your guess" class="form-control me-2" style="max-width: 300px;" />
+                <button type="submit" name="submit_guess" class="btn btn-success me-2">Guess</button>
+                <button type="submit" name="hint" class="btn btn-info">Get Hint</button>
+            </form>
+    
+            <!-- Progress Indicator -->
             <div class="mt-4">
-                <h5>Hints:</h5>
-                <ul class="list-group">
-                    {% for hint in hints %}
-                        <li class="list-group-item">{{ hint }}</li>
-                    {% endfor %}
-                </ul>
+                <div class="progress">
+                    <div class="progress-bar" role="progressbar" style="width: {{ progress_percentage }}%;" 
+                         aria-valuenow="{{ current_index }}" aria-valuemin="0" aria-valuemax="{{ total_movies }}"></div>
+                </div>
             </div>
-        {% endif %}
-
-        <!-- Error Message -->
-        {% if error %}
-            <div class="alert alert-warning mt-3">{{ error }}</div>
-        {% endif %}
+    
+            <!-- Hints Section -->
+            {% if hints %}
+                <div class="mt-4">
+                    <h5>Hints:</h5>
+                    <ul class="list-group">
+                        {% for hint in hints %}
+                            <li class="list-group-item">{{ hint }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+    
+            <!-- Error Message -->
+            {% if error %}
+                <div class="alert alert-warning mt-3">{{ error }}</div>
+            {% endif %}
+        </div>
     </div>
-</div>
+    
+    <script>
+        // Display messages and hide them after 2 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function(alert) {
+                setTimeout(function() {
+                    alert.style.transition = 'opacity 0.5s ease';
+                    alert.style.opacity = '0';
+                    setTimeout(function() {
+                        alert.style.display = 'none'; // Hide after fade out
+                    }, 500); // Wait for fade out to complete before hiding
+                }, 2000); // Show for 2 seconds
+            });
+        });
 
-<script>
-    // Global Timer (6 minutes)
-    let totalTime = 6 * 60; // 6 minutes in seconds
-    const timerElement = document.getElementById('timer');
-
-    const updateTimer = () => {
-        const minutes = Math.floor(totalTime / 60);
-        const seconds = totalTime % 60;
-        timerElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        totalTime--;
-
-        if (totalTime < 0) {
-            clearInterval(timerInterval);
-            alert('Time is up!');
-            document.querySelector('form').submit(); // Auto-submit when time runs out
-        }
-    };
-
-    const timerInterval = setInterval(updateTimer, 1000);
-</script>
+        // Global Timer (6 minutes)
+        let totalTime = 6 * 60; // 6 minutes in seconds
+        const timerElement = document.getElementById('timer');
+    
+        const updateTimer = () => {
+            const minutes = Math.floor(totalTime / 60);
+            const seconds = totalTime % 60;
+            timerElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            totalTime--;
+    
+            if (totalTime < 0) {
+                clearInterval(timerInterval);
+                alert('Time is up!');
+                document.querySelector('form').submit(); // Auto-submit when time runs out
+            }
+        };
+    
+        const timerInterval = setInterval(updateTimer, 1000);
+    </script>
 
 </body>
 </html>

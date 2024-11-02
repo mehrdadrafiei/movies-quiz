@@ -16,6 +16,7 @@ def start_game(request):
     if request.method == 'POST':
         tmdb = TMDBDownloader()
         tmdb.fetch_and_store_movies()
+        # messages.success(request, 'Game started! Movies have been fetched.')  # Success message
         return redirect('guess_movie')
 
     return render(request, 'start_game.html')
@@ -61,14 +62,13 @@ def guess_movie(request):
                 current_index += 1
                 request.session['current_index'] = current_index
                 request.session['hints_used_for_current_movie'] = 0  # Reset for the next movie
-                messages.success(request, 'Correct! Great job!')  # Use messages framework
+                messages.add_message(request, messages.SUCCESS, 'Correct! Great job!', extra_tags='success')
                 return redirect('guess_movie')
             else:
-                context['error'] = "Incorrect guess! Moving to the next movie."
-                messages.error(request, 'Incorrect guess! Better luck next time.')  # Use messages framework
                 current_index += 1
                 request.session['current_index'] = current_index
                 request.session['hints_used_for_current_movie'] = 0  # Reset for the next movie
+                messages.add_message(request, messages.ERROR, 'Incorrect guess! Better luck next time.', extra_tags='danger')
                 return redirect('guess_movie')
 
         elif 'hint' in request.POST:
@@ -77,8 +77,10 @@ def guess_movie(request):
                 hints_used_for_current_movie += 1
                 request.session['global_hints_used'] = global_hints_used
                 request.session['hints_used_for_current_movie'] = hints_used_for_current_movie
+                # messages.info(request, 'Hint used successfully!')  # Informational message
                 return redirect('guess_movie')
             else:
+                messages.warning(request, "No more global hints available.")  # Warning message
                 context['error'] = "No more global hints available."
 
     return render(request, 'guess_movie.html', context)
