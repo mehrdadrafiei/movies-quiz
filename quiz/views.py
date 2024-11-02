@@ -10,6 +10,7 @@ def start_game(request):
     request.session['score'] = 0
     request.session['start_time'] = time.time()
     request.session['hints_used'] = 0
+    request.session['global_hints_used'] = 0  # Reset global hints
 
     if request.method == 'POST':
         tmdb = TMDBDownloader()

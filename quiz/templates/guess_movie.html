@@ -23,7 +23,10 @@
         <div class="info-container">
             <div class="timer" id="timer">06:00</div>
             <div class="score">Score: {{ score }} / {{ total_movies }}</div>
-            <div class="remaining-questions">Remaining: {{ remaining_questions }}</div>
+            <div class="remaining-questions">
+                Remaining: {{ remaining_questions }}<br>
+                <small>Hints Available: {{ global_hints_remaining }}</small>
+            </div>
         </div>
 
         <h1 class="card-title text-center mb-4">Guess the Movie!</h1>
