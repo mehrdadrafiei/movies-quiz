@@ -1,5 +1,3 @@
-
-
 # views.py
 from django.shortcuts import render, redirect
 from .tmdb import TMDBDownloader
