@@ -11,7 +11,9 @@
 <div class="container d-flex justify-content-center align-items-center" style="height: 100vh;">
     <div class="card text-center p-5 shadow-lg">
         <h1 class="card-title">Congratulations!</h1>
-        <p class="card-text">You have guessed all the movies!</p>
+        <p class="card-text">You have completed the game!</p>
+        <p class="card-text"><strong>Your Score:</strong> {{ score }} / {{ total_movies }}</p>
+        <p class="card-text"><strong>Total Hints Used:</strong> {{ global_hints_used }}</p>
         <a href="{% url 'start_game' %}" class="btn btn-primary btn-lg">Play Again</a>
     </div>
 </div>

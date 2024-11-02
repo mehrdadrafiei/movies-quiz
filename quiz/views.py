@@ -27,7 +27,13 @@ def guess_movie(request):
     total_movies = movies.count()
 
     if current_index >= total_movies:
-        return render(request, 'finished.html')  # End of game
+        # Pass the final score and any other relevant data to the finished template
+        context = {
+            'score': score,
+            'total_movies': total_movies,
+            'global_hints_used': request.session.get('global_hints_used', 0),
+        }
+        return render(request, 'finished.html', context)  # End of game with context
 
     current_movie = movies[current_index]
     global_hints_used = request.session.get('global_hints_used', 0)
@@ -48,9 +54,8 @@ def guess_movie(request):
         'movie': current_movie,
         'overview': current_movie.overview,
         'hints': hints,
-        'current_movie_display': current_movie_display,  # New key for displaying the current movie
-        'score': score,  # Display score as a single number
-        # 'progress_percentage': progress_percentage,
+        'current_movie_display': current_movie_display,
+        'score': score,
         'remaining_questions': remaining_questions,
         'global_hints_remaining': max_global_hints - global_hints_used,
     }
@@ -74,7 +79,6 @@ def guess_movie(request):
                 return redirect('guess_movie')
 
         elif 'hint' in request.POST:
-            # Check if hints used for the current movie are less than 2
             if hints_used_for_current_movie < 2:
                 if global_hints_used < max_global_hints:
                     global_hints_used += 1
