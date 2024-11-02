@@ -10,13 +10,12 @@ def start_game(request):
     request.session['current_index'] = 0
     request.session['score'] = 0
     request.session['start_time'] = time.time()
-    request.session['hints_used'] = 0
     request.session['global_hints_used'] = 0  # Reset global hints
+    request.session['hints_used_for_current_movie'] = 0  # Initialize hints for the current movie
 
     if request.method == 'POST':
         tmdb = TMDBDownloader()
         tmdb.fetch_and_store_movies()
-        # messages.success(request, 'Game started! Movies have been fetched.')  # Success message
         return redirect('guess_movie')
 
     return render(request, 'start_game.html')
@@ -35,9 +34,13 @@ def guess_movie(request):
     max_global_hints = 5  # Total hints allowed for all movies
     hints_used_for_current_movie = request.session.get('hints_used_for_current_movie', 0)
 
+    # Reset hints for the current movie at the start of guessing
+    if hints_used_for_current_movie == 0 and current_index > 0:
+        request.session['hints_used_for_current_movie'] = 0  # Reset for the new movie
+
     hints = current_movie.hints[:hints_used_for_current_movie] if hints_used_for_current_movie > 0 else []
 
-    progress_percentage = (current_index / total_movies) * 100 if total_movies > 0 else 0
+    # progress_percentage = (current_index / total_movies) * 100 if total_movies > 0 else 0
     remaining_questions = total_movies - current_index
 
     context = {
@@ -46,7 +49,7 @@ def guess_movie(request):
         'hints': hints,
         'current_index': current_index + 1,
         'total_movies': total_movies,
-        'progress_percentage': progress_percentage,
+        #'progress_percentage': progress_percentage,
         'score': score,
         'remaining_questions': remaining_questions,
         'error': None,
@@ -72,15 +75,21 @@ def guess_movie(request):
                 return redirect('guess_movie')
 
         elif 'hint' in request.POST:
-            if global_hints_used < max_global_hints:
-                global_hints_used += 1
-                hints_used_for_current_movie += 1
-                request.session['global_hints_used'] = global_hints_used
-                request.session['hints_used_for_current_movie'] = hints_used_for_current_movie
-                # messages.info(request, 'Hint used successfully!')  # Informational message
-                return redirect('guess_movie')
+            # Check if hints used for the current movie are less than 2
+            if hints_used_for_current_movie < 2:
+                if global_hints_used < max_global_hints:
+                    global_hints_used += 1
+                    hints_used_for_current_movie += 1
+                    request.session['global_hints_used'] = global_hints_used
+                    request.session['hints_used_for_current_movie'] = hints_used_for_current_movie
+                    # messages.info(request, 'Hint used successfully!')  # Informational message
+                else:
+                    # context['error'] = "No more global hints available."
+                    messages.warning(request, "No more global hints available.")  # Warning message
             else:
-                messages.warning(request, "No more global hints available.")  # Warning message
-                context['error'] = "No more global hints available."
+                # context['error'] = "No more global hints available."
+                messages.info(request, "You have already used the maximum number of hints for this movie.")  # Informational message
+
+            return redirect('guess_movie')
 
     return render(request, 'guess_movie.html', context)
