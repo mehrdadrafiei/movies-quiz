@@ -28,9 +28,13 @@ def guess_movie(request):
         return render(request, 'finished.html')  # End of game
 
     current_movie = movies[current_index]
-    hints_used = request.session.get('hints_used', 0)
-    max_hints = len(current_movie.hints)
-    hints = current_movie.hints[:hints_used] if hints_used > 0 else []
+    global_hints_used = request.session.get('global_hints_used', 0)
+    max_global_hints = 5  # Total hints allowed for all movies
+    hints_used_for_current_movie = request.session.get('hints_used_for_current_movie', 0)
+
+    # Display hints only if used for the current movie
+    hints = current_movie.hints[:hints_used_for_current_movie] if hints_used_for_current_movie > 0 else []
+
     progress_percentage = (current_index / total_movies) * 100 if total_movies > 0 else 0
     remaining_questions = total_movies - current_index
 
@@ -44,6 +48,7 @@ def guess_movie(request):
         'score': score,
         'remaining_questions': remaining_questions,
         'error': None,
+        'global_hints_remaining': max_global_hints - global_hints_used,
     }
 
     if request.method == 'POST':
@@ -54,19 +59,23 @@ def guess_movie(request):
                 request.session['score'] = score
                 current_index += 1
                 request.session['current_index'] = current_index
-                request.session['hints_used'] = 0
+                request.session['hints_used_for_current_movie'] = 0  # Reset for the next movie
                 return redirect('guess_movie')
             else:
                 context['error'] = "Incorrect guess! Moving to the next movie."
                 current_index += 1
                 request.session['current_index'] = current_index
+                request.session['hints_used_for_current_movie'] = 0  # Reset for the next movie
                 return redirect('guess_movie')
+
         elif 'hint' in request.POST:
-            if hints_used < max_hints:
-                hints_used += 1
-                request.session['hints_used'] = hints_used
+            if global_hints_used < max_global_hints:
+                global_hints_used += 1
+                hints_used_for_current_movie += 1
+                request.session['global_hints_used'] = global_hints_used
+                request.session['hints_used_for_current_movie'] = hints_used_for_current_movie
                 return redirect('guess_movie')
             else:
-                context['error'] = "No more hints available."
+                context['error'] = "No more global hints available."
 
     return render(request, 'guess_movie.html', context)
