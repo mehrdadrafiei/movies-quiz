@@ -12,7 +12,7 @@ def start_game(request):
     request.session['start_time'] = time.time()
     request.session['global_hints_used'] = 0
     request.session['hints_used_for_current_movie'] = 0
-    request.session['remaining_time'] = 360  # 6 minutes in seconds
+    request.session['remaining_time'] = 6 * 60  # 6 minutes in seconds
 
     if request.method == 'POST':
         tmdb = TMDBDownloader()
@@ -28,10 +28,13 @@ def guess_movie(request):
     total_movies = len(movies)
 
     if current_index >= total_movies:
+        # Calculate total time taken
+        total_time = (time.time() - request.session['start_time']) / 60  # Convert seconds to minutes
         context = {
             'score': score,
             'total_movies': total_movies,
             'global_hints_used': request.session.get('global_hints_used', 0),
+            'total_time': round(total_time, 2),  # Pass total time to the context (rounded to 2 decimal places)
         }
         return render(request, 'finished.html', context)
 
@@ -55,16 +58,11 @@ def guess_movie(request):
 
     random.shuffle(choices)
 
-    # Calculate the elapsed time
     elapsed_time = time.time() - request.session['start_time']
     # Update the session start time for the next question
     request.session['start_time'] = time.time()
-
-    # Calculate the remaining time based on the session remaining time
     remaining_time = max(0, request.session['remaining_time'] - int(elapsed_time))
-
-    # Update the remaining time in the session for the next question
-    request.session['remaining_time'] = remaining_time  # Update remaining time in the session
+    request.session['remaining_time'] = remaining_time  # Update the remaining time in the session for the next question
 
     if request.method == 'POST':
         if 'selected_guess' in request.POST:
