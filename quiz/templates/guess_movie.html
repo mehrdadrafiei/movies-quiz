@@ -36,7 +36,7 @@
                 <div class="timer" id="timer">06:00</div>
                 <div class="remaining-questions">
                     <div class="score">Score: {{ score }}</div>
-                    <small>Hints Available: {{ global_hints_remaining }}</small>
+                    <small>Hints Available: <span id="remaining-hints">{{ global_hints_remaining }}</span></small>
                 </div>
             </div>
 
@@ -46,30 +46,34 @@
             {% if hints %}
                 <div class="mb-3">
                     <strong>Hints:</strong>
-                    <ul>
+                    <ul id="hint-list">
                         {% for hint in hints %}
                             <li>{{ hint }}</li>
                         {% endfor %}
                     </ul>
                 </div>
+            {% else %}
+                <ul id="hint-list">
+                    <!-- Hints will be dynamically added here -->
+                </ul>
             {% endif %}
 
-            <form method="POST">
+            <button id="hint-button" class="btn btn-warning mt-3">Get a Hint</button>
+
+            <form id="guessForm">
                 {% csrf_token %}
-                <div class="row">
+                <div class="row mt-3">
                     {% for choice in choices %}
                         <div class="col-6 mb-3">
-                            <button type="submit" name="selected_guess" value="{{ choice }}" class="btn btn-outline-primary w-100">{{ choice }}</button>
+                            <button type="button" class="btn btn-outline-primary w-100 guess-button" data-choice="{{ choice }}">{{ choice }}</button>
                         </div>
                     {% endfor %}
                 </div>
-                <button type="submit" name="hint" class="btn btn-warning mt-3">Get a Hint</button>
             </form>
         </div>
     </div>
     
     <script>
-        // Display messages and hide them after 2 seconds
         document.addEventListener('DOMContentLoaded', function() {
             const alerts = document.querySelectorAll('.alert');
             alerts.forEach(function(alert) {
@@ -78,29 +82,105 @@
                     alert.style.opacity = '0';
                     setTimeout(function() {
                         alert.style.display = 'none'; // Hide after fade out
-                    }, 500); // Wait for fade out to complete before hiding
-                }, 2000); // Show for 2 seconds
+                    }, 500);
+                }, 2000);
+            });
+
+            // Global Timer (6 minutes)
+            let totalTime = 6 * 60; // 6 minutes in seconds
+            const timerElement = document.getElementById('timer');
+        
+            const updateTimer = () => {
+                const minutes = Math.floor(totalTime / 60);
+                const seconds = totalTime % 60;
+                timerElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                totalTime--;
+        
+                if (totalTime < 0) {
+                    clearInterval(timerInterval);
+                    alert('Time is up!');
+                    document.querySelector('form').submit(); // Auto-submit when time runs out
+                }
+            };
+        
+            const timerInterval = setInterval(updateTimer, 1000);
+
+            const guessButtons = document.querySelectorAll('.guess-button');
+            guessButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const selectedGuess = this.getAttribute('data-choice');
+                    const formData = new FormData();
+                    formData.append('selected_guess', selectedGuess);
+                    
+                    fetch('', {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}',
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        guessButtons.forEach(btn => btn.disabled = true); // Disable all buttons
+
+                        if (data.is_correct) {
+                            this.classList.add('btn-success'); // Correct answer
+                        } else {
+                            this.classList.add('btn-danger'); // Incorrect answer
+                            const correctButton = Array.from(guessButtons).find(btn => btn.getAttribute('data-choice') === data.correct_answer);
+                            if (correctButton) {
+                                correctButton.classList.add('btn-success'); // Highlight correct answer
+                            }
+                        }
+
+                        // Delay the page reload to allow the color change to show
+                        setTimeout(() => {
+                            location.reload(); // Reload the page to show the next question
+                        }, 1500); // Wait for 1.5 seconds
+                    });
+                });
+            });
+
+            // Hint button functionality
+            const hintButton = document.getElementById('hint-button');
+            hintButton.addEventListener('click', function() {
+                const formData = new FormData();
+                formData.append('hint', 'true');
+
+                fetch('', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const hintList = document.getElementById('hint-list');
+
+                    if (data.success) {
+                        // Clear previous hints to avoid duplicates
+                        hintList.innerHTML = ''; 
+
+                        // Add the new hints
+                        data.hints.forEach(hint => {
+                            const li = document.createElement('li');
+                            li.textContent = hint;
+                            hintList.appendChild(li);
+                        });
+
+                        // Update the hints remaining display
+                        const globalHintsRemaining = document.getElementById('remaining-hints');
+                        globalHintsRemaining.textContent = data.global_hints_remaining;
+                    } else {
+                        alert(data.message); // Display the error message if hints can't be shown
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching hints:', error);
+                });
             });
         });
-
-        // Global Timer (6 minutes)
-        let totalTime = 6 * 60; // 6 minutes in seconds
-        const timerElement = document.getElementById('timer');
-    
-        const updateTimer = () => {
-            const minutes = Math.floor(totalTime / 60);
-            const seconds = totalTime % 60;
-            timerElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-            totalTime--;
-    
-            if (totalTime < 0) {
-                clearInterval(timerInterval);
-                alert('Time is up!');
-                document.querySelector('form').submit(); // Auto-submit when time runs out
-            }
-        };
-    
-        const timerInterval = setInterval(updateTimer, 1000);
     </script>
 
 </body>

@@ -1,9 +1,10 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render,redirect
 from django.contrib import messages
 from .tmdb import TMDBDownloader
 from .models import Movie
 import random
 import time
+from django.http import JsonResponse
 
 def start_game(request):
     request.session['current_index'] = 0
@@ -51,6 +52,41 @@ def guess_movie(request):
 
     random.shuffle(choices)
 
+    if request.method == 'POST':
+        if 'selected_guess' in request.POST:
+            selected_guess = request.POST.get('selected_guess', '').strip()
+            is_correct = selected_guess.lower() == current_movie.title.lower()
+
+            if is_correct:
+                score += 1
+                request.session['score'] = score
+                request.session['hints_used_for_current_movie'] = 0
+                request.session['current_index'] = current_index + 1
+                return JsonResponse({'is_correct': True, 'correct_answer': current_movie.title})
+
+            else:
+                request.session['hints_used_for_current_movie'] = 0  # Reset for the next movie
+                request.session['current_index'] = current_index + 1
+                return JsonResponse({'is_correct': False, 'correct_answer': current_movie.title})
+
+        elif 'hint' in request.POST:
+            if hints_used_for_current_movie < 2:
+                if global_hints_used < max_global_hints:
+                    global_hints_used += 1
+                    hints_used_for_current_movie += 1
+                    request.session['global_hints_used'] = global_hints_used
+                    request.session['hints_used_for_current_movie'] = hints_used_for_current_movie
+                    hints = current_movie.hints[:hints_used_for_current_movie]  # Update hints
+                    return JsonResponse({
+                        'success': True,
+                        'hints': hints,
+                        'global_hints_remaining': max_global_hints - global_hints_used
+                    })
+                else:
+                    return JsonResponse({'success': False, 'message': "No more global hints available."})
+            else:
+                return JsonResponse({'success': False, 'message': "You have already used the maximum number of hints for this movie."})
+
     context = {
         'movie': current_movie,
         'overview': current_movie.overview,
@@ -61,34 +97,5 @@ def guess_movie(request):
         'remaining_questions': total_movies - current_index,
         'global_hints_remaining': max_global_hints - global_hints_used,
     }
-
-    if request.method == 'POST':
-        if 'selected_guess' in request.POST:
-            selected_guess = request.POST.get('selected_guess', '').strip()
-            if selected_guess.lower() == current_movie.title.lower():
-                score += 1
-                request.session['score'] = score
-                messages.success(request, 'Correct! Great job!', extra_tags='success')
-            else:
-                messages.error(request, 'Incorrect guess! Better luck next time.', extra_tags='danger')
-
-            request.session['hints_used_for_current_movie'] = 0  # Reset for the next movie
-            request.session['current_index'] = current_index + 1
-            return redirect('guess_movie')
-
-        elif 'hint' in request.POST:
-            if hints_used_for_current_movie < 2:
-                if global_hints_used < max_global_hints:
-                    global_hints_used += 1
-                    hints_used_for_current_movie += 1
-                    request.session['global_hints_used'] = global_hints_used
-                    request.session['hints_used_for_current_movie'] = hints_used_for_current_movie
-                    hints = current_movie.hints[:hints_used_for_current_movie]  # Update hints
-                else:
-                    messages.warning(request, "No more global hints available.")
-            else:
-                messages.info(request, "You have already used the maximum number of hints for this movie.")
-                
-            return redirect('guess_movie')
 
     return render(request, 'guess_movie.html', context)
