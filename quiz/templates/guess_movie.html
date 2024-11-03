@@ -6,8 +6,11 @@
     <title>Guess the Movie</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        .timer, .current-movie-display, .score {
+        .current-movie-display, .score {
             font-size: 20px;
+        }
+        .timer {
+            font-size: 30px;
         }
         .info-container {
             display: flex;
@@ -27,54 +30,41 @@
                     </div>
                 {% endfor %}
             {% endif %}
-        
-            <div class="info-container">
-                <div class="timer" id="timer">06:00</div>
+
+            <div class="info-container">                
                 <div class="current-movie-display">Question: {{ current_movie_display }}</div>
+                <div class="timer" id="timer">06:00</div>
                 <div class="remaining-questions">
-                    Score: {{ score }}<br>
+                    <div class="score">Score: {{ score }}</div>
                     <small>Hints Available: {{ global_hints_remaining }}</small>
                 </div>
             </div>
-    
-            <h1 class="card-title text-center mb-4">Guess the Movie!</h1>
-    
-            <div>
-                <p><strong>Overview:</strong> {{ overview }}</p>
-            </div>
-    
-            <!-- Guess Form -->
-            <form method="POST" class="d-flex justify-content-center">
-                {% csrf_token %}
-                <input type="text" name="guess" placeholder="Enter your guess" class="form-control me-2" style="max-width: 300px;" />
-                <button type="submit" name="submit_guess" class="btn btn-success me-2">Guess</button>
-                <button type="submit" name="hint" class="btn btn-info">Get Hint</button>
-            </form>
-    
-            <!-- Progress Indicator
-            <div class="mt-4">
-                <div class="progress">
-                    <div class="progress-bar" role="progressbar" style="width: {{ progress_percentage }}%;" 
-                         aria-valuenow="{{ current_index }}" aria-valuemin="0" aria-valuemax="{{ total_movies }}"></div>
-                </div>
-            </div>
-     -->
-            <!-- Hints Section -->
+
+            <h3 class="mb-3">Movie Overview</h3>
+            <p>{{ overview }}</p>
+
             {% if hints %}
-                <div class="mt-4">
-                    <h5>Hints:</h5>
-                    <ul class="list-group">
+                <div class="mb-3">
+                    <strong>Hints:</strong>
+                    <ul>
                         {% for hint in hints %}
-                            <li class="list-group-item">{{ hint }}</li>
+                            <li>{{ hint }}</li>
                         {% endfor %}
                     </ul>
                 </div>
             {% endif %}
-    
-            <!-- Error Message -->
-            {% if error %}
-                <div class="alert alert-warning mt-3">{{ error }}</div>
-            {% endif %}
+
+            <form method="POST">
+                {% csrf_token %}
+                <div class="row">
+                    {% for choice in choices %}
+                        <div class="col-6 mb-3">
+                            <button type="submit" name="selected_guess" value="{{ choice }}" class="btn btn-outline-primary w-100">{{ choice }}</button>
+                        </div>
+                    {% endfor %}
+                </div>
+                <button type="submit" name="hint" class="btn btn-warning mt-3">Get a Hint</button>
+            </form>
         </div>
     </div>
     
