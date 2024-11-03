@@ -20,14 +20,12 @@
         .btn-success {
             color: white !important; /* Ensures text color is white */
         }
-
         .btn-danger {
             color: white !important; /* Ensures text color is white */
         }
     </style>
 </head>
 <body>
-
     <div class="container mt-5">
         <div class="card shadow-sm p-4">
             {% if messages %}
@@ -67,7 +65,7 @@
 
             <button id="hint-button" class="btn btn-warning mt-3">Get a Hint</button>
 
-            <form id="guessForm">
+            <form id="guessForm" method="post">
                 {% csrf_token %}
                 <div class="row mt-3">
                     {% for choice in choices %}
@@ -81,6 +79,29 @@
     </div>
     
     <script>
+        let totalTime = {{ remaining_time }};
+        let timerInterval;
+
+        const updateTimerDisplay = () => {
+            const timerElement = document.getElementById('timer');
+            const minutes = Math.floor(totalTime / 60);
+            const seconds = totalTime % 60;
+            timerElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        };
+
+        const startTimer = () => {
+            timerInterval = setInterval(() => {
+                totalTime--;
+                updateTimerDisplay();
+
+                if (totalTime < 0) {
+                    clearInterval(timerInterval);
+                    alert('Time is up!');
+                    document.getElementById('guessForm').submit(); // Auto-submit when time runs out
+                }
+            }, 1000);
+        };
+
         document.addEventListener('DOMContentLoaded', function() {
             const alerts = document.querySelectorAll('.alert');
             alerts.forEach(function(alert) {
@@ -93,24 +114,9 @@
                 }, 2000);
             });
 
-            // Global Timer (6 minutes)
-            let totalTime = 6 * 60; // 6 minutes in seconds
-            const timerElement = document.getElementById('timer');
-        
-            const updateTimer = () => {
-                const minutes = Math.floor(totalTime / 60);
-                const seconds = totalTime % 60;
-                timerElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-                totalTime--;
-        
-                if (totalTime < 0) {
-                    clearInterval(timerInterval);
-                    alert('Time is up!');
-                    document.querySelector('form').submit(); // Auto-submit when time runs out
-                }
-            };
-        
-            const timerInterval = setInterval(updateTimer, 1000);
+            // Start the timer when the page loads
+            updateTimerDisplay();
+            startTimer();
 
             let answerClicked = false;
             const guessButtons = document.querySelectorAll('.guess-button');

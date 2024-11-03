@@ -52,8 +52,10 @@
 
 <script>
     document.getElementById("start-game-form").addEventListener("submit", function() {
-        document.getElementById("spinner").style.display = "block"; // Show spinner
-        document.getElementById("start-button").disabled = true; // Disable button
+        // Show spinner
+        document.getElementById("spinner").style.display = "block"; 
+        // Disable button to prevent multiple clicks
+        document.getElementById("start-button").disabled = true; 
     });
 </script>
 

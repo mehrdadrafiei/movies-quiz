@@ -1,4 +1,4 @@
-from django.shortcuts import render,redirect
+from django.shortcuts import render, redirect
 from django.contrib import messages
 from .tmdb import TMDBDownloader
 from .models import Movie
@@ -12,6 +12,7 @@ def start_game(request):
     request.session['start_time'] = time.time()
     request.session['global_hints_used'] = 0
     request.session['hints_used_for_current_movie'] = 0
+    request.session['remaining_time'] = 360  # 6 minutes in seconds
 
     if request.method == 'POST':
         tmdb = TMDBDownloader()
@@ -38,8 +39,10 @@ def guess_movie(request):
     global_hints_used = request.session.get('global_hints_used', 0)
     max_global_hints = 5
     hints_used_for_current_movie = request.session.get('hints_used_for_current_movie', 0)
+
+    # Reset hints for the new movie
     if hints_used_for_current_movie == 0 and current_index > 0:
-        request.session['hints_used_for_current_movie'] = 0  # Reset for the new movie
+        request.session['hints_used_for_current_movie'] = 0
 
     hints = current_movie.hints[:hints_used_for_current_movie] if hints_used_for_current_movie > 0 else []
 
@@ -51,6 +54,17 @@ def guess_movie(request):
             choices.append(random_movie.title)
 
     random.shuffle(choices)
+
+    # Calculate the elapsed time
+    elapsed_time = time.time() - request.session['start_time']
+    # Update the session start time for the next question
+    request.session['start_time'] = time.time()
+
+    # Calculate the remaining time based on the session remaining time
+    remaining_time = max(0, request.session['remaining_time'] - int(elapsed_time))
+
+    # Update the remaining time in the session for the next question
+    request.session['remaining_time'] = remaining_time  # Update remaining time in the session
 
     if request.method == 'POST':
         if 'selected_guess' in request.POST:
@@ -96,6 +110,7 @@ def guess_movie(request):
         'score': score,
         'remaining_questions': total_movies - current_index,
         'global_hints_remaining': max_global_hints - global_hints_used,
+        'remaining_time': remaining_time,  # Pass remaining time to the context
     }
 
     return render(request, 'guess_movie.html', context)
