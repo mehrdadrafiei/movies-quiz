@@ -105,9 +105,13 @@
         
             const timerInterval = setInterval(updateTimer, 1000);
 
+            let answerClicked = false;
             const guessButtons = document.querySelectorAll('.guess-button');
             guessButtons.forEach(button => {
                 button.addEventListener('click', function() {
+                    if (answerClicked) return; // Prevent multiple interactions
+                    answerClicked = true;
+
                     const selectedGuess = this.getAttribute('data-choice');
                     const formData = new FormData();
                     formData.append('selected_guess', selectedGuess);
@@ -121,22 +125,23 @@
                     })
                     .then(response => response.json())
                     .then(data => {
-                        guessButtons.forEach(btn => btn.disabled = true); // Disable all buttons
-
                         if (data.is_correct) {
-                            this.classList.add('btn-success'); // Correct answer
+                            this.classList.add('btn-success');
                         } else {
-                            this.classList.add('btn-danger'); // Incorrect answer
+                            this.classList.add('btn-danger');
                             const correctButton = Array.from(guessButtons).find(btn => btn.getAttribute('data-choice') === data.correct_answer);
                             if (correctButton) {
-                                correctButton.classList.add('btn-success'); // Highlight correct answer
+                                correctButton.classList.add('btn-success');
                             }
                         }
 
-                        // Delay the page reload to allow the color change to show
                         setTimeout(() => {
-                            location.reload(); // Reload the page to show the next question
-                        }, 1500); // Wait for 1.5 seconds
+                            location.reload();
+                        }, 1500);
+                    })
+                    .catch(error => {
+                        console.error('Error fetching guess:', error);
+                        answerClicked = false; // Reset if an error occurs
                     });
                 });
             });
