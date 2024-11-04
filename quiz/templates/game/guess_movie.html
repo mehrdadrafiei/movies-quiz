@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,25 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Guess the Movie</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        .current-movie-display, .score {
-            font-size: 20px;
-        }
-        .timer {
-            font-size: 30px;
-        }
-        .info-container {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 20px;
-        }
-        .btn-success {
-            color: white !important; /* Ensures text color is white */
-        }
-        .btn-danger {
-            color: white !important; /* Ensures text color is white */
-        }
-    </style>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}"> 
 </head>
 <body>
     <div class="container mt-5">
@@ -120,9 +103,15 @@
             let answerClicked = false;
             const guessButtons = document.querySelectorAll('.guess-button');
             guessButtons.forEach(button => {
-                button.addEventListener('click', function() {
+                button.addEventListener('click', function () {
                     if (answerClicked) return; // Prevent multiple interactions
                     answerClicked = true;
+
+                    // Disable all buttons but keep their styles intact
+                    guessButtons.forEach(btn => {
+                        //btn.disabled = true;
+                        btn.style.pointerEvents = 'none'; // Prevent further clicks
+                    });
 
                     const selectedGuess = this.getAttribute('data-choice');
                     const formData = new FormData();
@@ -138,12 +127,12 @@
                     .then(response => response.json())
                     .then(data => {
                         if (data.is_correct) {
-                            this.classList.add('btn-success');
+                            this.classList.add('correct');
                         } else {
-                            this.classList.add('btn-danger');
+                            this.classList.add('incorrect');
                             const correctButton = Array.from(guessButtons).find(btn => btn.getAttribute('data-choice') === data.correct_answer);
                             if (correctButton) {
-                                correctButton.classList.add('btn-success');
+                                correctButton.classList.add('correct');
                             }
                         }
 
@@ -154,9 +143,16 @@
                     .catch(error => {
                         console.error('Error fetching guess:', error);
                         answerClicked = false; // Reset if an error occurs
+                        // Re-enable buttons on error
+                        guessButtons.forEach(btn => {
+                            //btn.disabled = false;
+                            btn.style.pointerEvents = 'auto';
+                        });
                     });
                 });
             });
+
+
 
             // Hint button functionality
             const hintButton = document.getElementById('hint-button');

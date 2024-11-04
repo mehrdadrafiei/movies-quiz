@@ -1,8 +1,8 @@
 from django.urls import path
-from .views import start_game, guess_movie
+from .views import StartGameView, GuessMovieView
 
 
 urlpatterns = [
-    path('start/', start_game, name='start_game'),
-    path('guess/', guess_movie, name='guess_movie'),
+    path('start/', StartGameView.as_view(), name='start_game'),
+    path('guess/', GuessMovieView.as_view(), name='guess_movie'),
 ]
