@@ -5,6 +5,7 @@ from .models import Movie
 import random
 import time
 from django.http import JsonResponse
+import logging
 
 class StartGameView(View):
     template_name = 'game/start_game.html'
@@ -13,25 +14,34 @@ class StartGameView(View):
         return render(request, self.template_name)
 
     def post(self, request):
-        request.session['current_index'] = 0
-        request.session['score'] = 0
-        request.session['start_time'] = time.time()
-        request.session['global_hints_used'] = 0
-        request.session['hints_used_for_current_movie'] = 0
-        request.session['remaining_time'] = 6 * 60  # 6 minutes in seconds
+        logging.info("StartGameView POST called")  # Debug statement
+        username = request.POST.get('username', f'Player{random.randint(1, 1000)}')
+        if username:
+            request.session['username'] = username  # Store username in session
+            request.session['current_index'] = 0
+            request.session['score'] = 0
+            request.session['start_time'] = time.time()
+            request.session['global_hints_used'] = 0
+            request.session['hints_used_for_current_movie'] = 0
+            request.session['remaining_time'] = 6 * 60  # 6 minutes in seconds
+            logging.info("Session variables set: %s", request.session.keys())  # Log session keys
+            # Fetch and store movies
+            tmdb = TMDBDownloader()
+            tmdb.fetch_and_store_movies()
+            return JsonResponse({'message': 'Game is starting!'})
+        return JsonResponse({'message': 'Username is required!'}, status=400)
 
-        tmdb = TMDBDownloader()
-        tmdb.fetch_and_store_movies()
-        return redirect('guess_movie')
 
 
 class GuessMovieView(View):
-    template_name = 'game/guess_movie.html'
     max_hints = 5
+    template_name = 'game/guess_movie.html'
     
+    # Add room_name parameter
     def get(self, request):
         current_index = request.session.get('current_index', 0)
         score = request.session.get('score', 0)
+        room_name = request.GET.get('room_name')  # Get room name from query params
         movies = list(Movie.objects.all()[:5])
         total_movies = len(movies)
 
@@ -66,10 +76,11 @@ class GuessMovieView(View):
             'remaining_questions': total_movies - current_index,
             'global_hints_remaining': self.max_hints - request.session.get('global_hints_used', 0),
             'remaining_time': self.calculate_remaining_time(request),
+            'room_name': room_name,  # Add room name to context
         }
 
         return render(request, self.template_name, context)
-
+    
     def post(self, request):
         current_index = request.session.get('current_index', 0)
         movies = list(Movie.objects.all()[:5])
@@ -102,7 +113,7 @@ class GuessMovieView(View):
         global_hints_used = request.session.get('global_hints_used', 0)
         hints_used_for_current_movie = request.session.get('hints_used_for_current_movie', 0)
 
-        if hints_used_for_current_movie < 2 and global_hints_used < 5:
+        if hints_used_for_current_movie < 2 and global_hints_used < self.max_hints:
             global_hints_used += 1
             hints_used_for_current_movie += 1
             request.session['global_hints_used'] = global_hints_used
@@ -111,9 +122,9 @@ class GuessMovieView(View):
             return JsonResponse({
                 'success': True,
                 'hints': hints,
-                'global_hints_remaining': 5 - global_hints_used
+                'global_hints_remaining': self.max_hints - global_hints_used
             })
-        elif global_hints_used >= 5:
+        elif global_hints_used >= self.max_hints:
             return JsonResponse({'success': False, 'message': "No more global hints available."})
         else:
             return JsonResponse({'success': False, 'message': "You have already used the maximum number of hints for this movie."})

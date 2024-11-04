@@ -20,3 +20,12 @@ from django.urls import path, include
 urlpatterns = [
     path('', include('quiz.urls')),
 ]
+
+DEBUG = True  # Make sure this is True for development
+
+# This is usually already included, but ensure it's there
+if DEBUG:
+    from django.conf.urls.static import static
+    from django.conf import settings
+
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

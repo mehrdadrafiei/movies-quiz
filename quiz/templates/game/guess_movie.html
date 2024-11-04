@@ -10,6 +10,7 @@
 </head>
 <body>
     <div class="container mt-5">
+        <h2>Room Name: {{ room_name }}</h2>  <!-- Display room name here -->
         <div class="card shadow-sm p-4">
             {% if messages %}
                 {% for message in messages %}
@@ -60,7 +61,7 @@
             </form>
         </div>
     </div>
-    
+
     <script>
         let totalTime = {{ remaining_time }};
         let timerInterval;
