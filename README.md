@@ -1,1 +1,1 @@
-Simple quiz game to guess Movies!
+Simple quiz game to guess Movies! written with Django.
